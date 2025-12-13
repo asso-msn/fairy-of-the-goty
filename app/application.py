@@ -4,8 +4,9 @@ import time
 import flask
 import rapidfuzz
 import yaml
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.wsgi import WSGIMiddleware
+from fastapi.responses import JSONResponse
 from flask import Flask
 from pydantic import BaseModel
 
@@ -93,6 +94,14 @@ def discord_logout():
     #         token=token,
     #     )
     return flask.redirect(flask.url_for("index"))
+
+
+@api.exception_handler(Exception)
+async def api_exception_handler(request: Request, exc: Exception):
+    return JSONResponse(
+        status_code=500,
+        content={"message": f"{exc}"},
+    )
 
 
 @api.get("/games/")
