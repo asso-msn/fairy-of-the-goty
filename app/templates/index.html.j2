@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>GOTY 2025 Games</title>
+    <style>
+        html {
+            background: #333;
+            color: white;
+        }
+        body {
+            max-width: 1200px;
+            margin: auto;
+            font-family: sans-serif;
+        }
+
+        a, a:visited {
+            color: #66ccff;
+        }
+
+        .icon {
+            width: 1em;
+            height: 1em;
+            vertical-align: middle;
+            border-radius: 50%;
+        }
+
+        .games {
+            margin: 1em 0;
+            display: flex;
+            flex-direction: row;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .games > * {
+            border: 1px solid #ccc;
+            padding: 0.5em;
+            width: 300px;
+            box-shadow: 0px 0px 5px rgba(0,0,0,0.5);
+            border-radius: 12px;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .games img {
+            width: 100%;
+            height: auto;
+        }
+
+        .my-votes .games > * {
+            width: 180px;
+        }
+
+        .my-votes .games img {
+            max-height: 200px;
+            width: auto;
+        }
+
+        .games .name {
+            font-weight: bold;
+            font-size: 1.2em;
+            text-decoration: none;
+            color: white;
+            text-shadow: 0px 0px 2px rgba(0,0,0,0.7);
+            position: absolute;
+            bottom: 10px;
+            left: 0;
+        }
+
+        .games .actions button {
+            font-size: 1.4em;
+        }
+    </style>
+    <style id="show-ratings-style">
+        .rating {
+            visibility: hidden;
+        }
+    </style>
+  </head>
+  <body>
+    <h1>GOTY 2025 Games</h1>
+    <div>
+        {% if discord_user %}
+            <p>Logged in as <img src="{{ discord_user.avatar_url }}" style="font-size: 2em" class="icon"> {{ discord_user.username }}</p>
+            <p><a href="{{ url_for('discord_logout') }}">Logout</a></p>
+            <p><label for="show-ratings">Show IGDB ratings: <input type="checkbox" id="show-ratings"></label></p>
+        {% else %}
+        {% if discord_auth_url %}
+        <p><a href="{{ discord_auth_url }}">Login with Discord</a></p>
+        {% endif %}
+        {% endif %}
+    </div>
+    {% if discord_user %}
+    <div class="my-votes">
+        <p>You are allowed {{ user_votes.remaining }} votes in the free category.</p>
+        {% if user_votes.votes %}
+        <p>Your voted games:</p>
+        <div class="games">
+            {% for vote in user_votes.votes %}
+            {% include "_voted_game.html.j2" %}
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% for genre, data in user_votes.genres.items() %}
+        <p>You are allowed {{ data.remaining }} votes in the {{ genre }} category.</p>
+        {% if data.votes %}
+        <p>Your voted games in {{ genre }}:</p>
+        <div class="games">
+            {% for vote in data.votes %}
+            {% include "_voted_game.html.j2" %}
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+    {% endif %}
+    <form id="search-form">
+      <input type="text" id="search-input" placeholder="Search for a game..." autocomplete="off">
+    </form>
+    <div id="results" class="games"></div>
+
+    <script>
+        const form = document.getElementById('search-form');
+        const input = document.getElementById('search-input');
+        const resultsList = document.getElementById('results');
+        const debounceDelay = 300;
+
+        // if 1s without typing a letter
+        let timeout = null;
+        input.addEventListener('input', () => {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                searchGames(input.value);
+            }, debounceDelay);
+        });
+
+        const ITEM_TEMPLATE = `
+            <div>
+                <div>
+                    <div style="position: relative;">
+                        <a href="{igdb_url}" target="_blank"><img src="{cover_url}"></a>
+                        <a href="{igdb_url}" class="name" target="_blank">{name}</a>
+                    </div>
+                    <div class="meta">
+                        <p class="data" data-value="{first_release_date}">{first_release_date}</p>
+                        <p class="data" data-value="{involved_companies}">by {involved_companies}</p>
+                        <p class="data" data-value="{platforms}">On {platforms}</p>
+                        <p class="data" data-value="{genres}">Genres: {genres}</p>
+                        <p class="data rating" data-value="{rating}">Rating: {rating}</p>
+                    </div>
+                </div>
+                <div class="actions">
+                    <button onclick="voteGame('{name}')">Vote for this game</button>
+                </div>
+            </div>`;
+
+        async function searchGames(query) {
+            resultsList.innerHTML = '';
+            if (!query)
+                return;
+
+            const response = await fetch(`/api/games/?q=${encodeURIComponent(query)}`);
+            const data = await response.json();
+            data.forEach(game => {
+                var itemHtml = ITEM_TEMPLATE;
+                for (const [key, value] of Object.entries(game)) {
+                    console.log(`Replacing {${key}} with ${value}`);
+                    itemHtml = itemHtml.replaceAll(`{${key}}`, value || '');
+                }
+                for (const elem of new DOMParser().parseFromString(itemHtml, 'text/html').querySelectorAll('.data')) {
+                    if (!elem.getAttribute('data-value') || elem.getAttribute('data-value') === '[]') {
+                        itemHtml = itemHtml.replace(elem.outerHTML, '');
+                    }
+                }
+                resultsList.insertAdjacentHTML('beforeend', itemHtml);
+            });
+        }
+
+        const showRatingsCheckbox = document.getElementById('show-ratings');
+        const showRatingsStyle = document.getElementById('show-ratings-style');
+
+        showRatingsCheckbox.checked = false;
+
+        showRatingsCheckbox.addEventListener('change', () => {
+            if (showRatingsCheckbox.checked) {
+                showRatingsStyle.innerHTML = `
+        .rating {
+            visibility: visible;
+        }`;
+            } else {
+                showRatingsStyle.innerHTML = `
+        .rating {
+            visibility: hidden;
+        }`;
+            }
+        });
+
+        async function voteGame(gameName) {
+            const response = await fetch('/api/vote/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ game_name: gameName, discord_access_token: '{{ discord_access_token }}' }),
+            });
+            if (response.status >= 200 && response.status < 300) {
+                window.location.reload();
+            } else {
+                alert(`Failed to vote for ${gameName}: ${response.status} ${await response.text()}`);
+            }
+        }
+
+        async function removeVote(gameName) {
+            const response = await fetch('/api/vote/', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ game_name: gameName, discord_access_token: '{{ discord_access_token }}' }),
+            });
+            if (response.status >= 200 && response.status < 300) {
+                window.location.reload();
+            } else {
+                alert(`Failed to delete vote for ${gameName}: ${response.status} ${await response.text()}`);
+            }
+        }
+
+        document.querySelectorAll(".my-votes .hide-vote").forEach(e => {
+            e.addEventListener('change', async () => {
+                const gameName = e.getAttribute('data-name');
+                const response = await fetch('/api/vote/', {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ game_name: gameName, discord_access_token: '{{ discord_access_token }}', hidden: e.checked}),
+                });
+                if (response.status > 400) {
+                    alert(`Failed to change vote visibility for ${gameName}: ${response.status} ${await response.text()}`);
+                }
+            });
+        });
+    </script>
+  </body>
+</html>

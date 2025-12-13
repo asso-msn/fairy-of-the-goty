@@ -1,0 +1,8 @@
+FastAPI
+flask
+uvicorn
+pydantic
+pyyaml
+rapidfuzz
+requests
+requests-cache

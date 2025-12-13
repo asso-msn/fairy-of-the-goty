@@ -1,0 +1,15 @@
+<div>
+    <a href="{{ vote.game.igdb_url }}" target="_blank"><img src="{{ vote.game.cover_url }}"></a>
+    <a href="{{ vote.game.igdb_url }}" target="_blank">{{ vote.game.name }}</a>
+    <div class="meta">
+        <p>{{ vote.game.genres | join(', ') }}</p>
+        <p class="rating">Rating: {{ vote.game.rating }}</p>
+    </div>
+    <div class="actions">
+        <button onclick="removeVote('{{ vote.game.name }}')">Remove vote</button>
+        <label for="hide-vote-{{ vote.game.slug }}">
+            Hide vote
+            <input data-name="{{ vote.game.name }}" class="hide-vote" type="checkbox" {{ 'checked' if vote.hidden else '' }} id="hide-vote-{{ vote.game.slug }}">
+        </label>
+    </div>
+</div>
