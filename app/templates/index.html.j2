@@ -154,7 +154,7 @@
                     </div>
                 </div>
                 <div class="actions">
-                    <button onclick="voteGame('{name}')">Vote for this game</button>
+                    <button onclick="voteGame('{escaped_name}')">Vote for this game</button>
                 </div>
             </div>`;
 
@@ -167,7 +167,7 @@
             const data = await response.json();
             data.forEach(game => {
                 var itemHtml = ITEM_TEMPLATE;
-                for (const [key, value] of Object.entries(game)) {
+                for (let [key, value] of Object.entries(game)) {
                     console.log(`Replacing {${key}} with ${value}`);
                     itemHtml = itemHtml.replaceAll(`{${key}}`, value || '');
                 }

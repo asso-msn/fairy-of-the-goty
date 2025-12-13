@@ -1,4 +1,5 @@
 import datetime
+import html
 
 from pydantic import BaseModel, Field, computed_field
 
@@ -21,6 +22,15 @@ class Game(BaseModel):
         ]
         if self.rating:
             self.rating = (self.rating * 100) // 100
+
+    @computed_field
+    @property
+    def escaped_name(self) -> str:
+        return (
+            html.escape(self.name, quote=False)
+            .replace("'", "\\'")
+            .replace('"', "&quot;")
+        )
 
     @computed_field
     @property

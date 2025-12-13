@@ -6,7 +6,7 @@
         <p class="rating">Rating: {{ vote.game.rating }}</p>
     </div>
     <div class="actions">
-        <button onclick="removeVote('{{ vote.game.name }}')">Remove vote</button>
+        <button onclick="removeVote('{{ vote.game.escaped_name }}')">Remove vote</button>
         <label for="hide-vote-{{ vote.game.slug }}">
             Hide vote
             <input data-name="{{ vote.game.name }}" class="hide-vote" type="checkbox" {{ 'checked' if vote.hidden else '' }} id="hide-vote-{{ vote.game.slug }}">
