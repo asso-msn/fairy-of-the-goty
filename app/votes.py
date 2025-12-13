@@ -43,7 +43,7 @@ def add(game_name: str, user_id: str):
     if vote_genre:
         if user_votes["genres"][vote_genre]["remaining"] == 0:
             raise Exception(f"No more votes available for {vote_genre}")
-    if user_votes["remaining"] == 0:
+    elif user_votes["remaining"] == 0:
         raise Exception("No more votes available for free section")
     vote = Vote(game_name=game_name, user_id=user_id)
     print("New vote", vote)
