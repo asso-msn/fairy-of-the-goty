@@ -56,15 +56,6 @@
             height: auto;
         }
 
-        .my-votes .games > * {
-            width: 180px;
-        }
-
-        .my-votes .games img {
-            max-height: 200px;
-            width: auto;
-        }
-
         .games .name {
             font-weight: bold;
             font-size: 1.2em;
@@ -92,6 +83,17 @@
 
         .games .category .value {
             font-weight: bold;
+        }
+
+        .my-votes .games img {
+            max-height: 200px;
+            width: auto;
+        }
+
+        .my-votes .games {
+            grid-template-columns: repeat(auto-fill, 180px);
+            justify-content: start;
+            gap: 10px;
         }
 
         #search-input {
