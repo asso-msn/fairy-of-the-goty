@@ -76,10 +76,12 @@ if __name__ == "__main__":
             f"fields {', '.join(fields)}",
             "where "
             + (
-                f"game_type = {API.Game.Category.MAIN_GAME}"
-                f"& first_release_date >= {start_of_year_unix}"
-                f"& first_release_date <= {end_of_year_unix}"
-                "& parent_game = null"
+                "game_type = ("
+                f"{API.Game.Category.MAIN_GAME}, {API.Game.Category.EXPANDED}"
+                ")"
+                f"& release_dates.date >= {start_of_year_unix}"
+                f"& release_dates.date <= {end_of_year_unix}"
+                # "& parent_game = null"
                 "& version_parent = null"
             ),
             f"limit {limit}",

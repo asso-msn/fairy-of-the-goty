@@ -172,8 +172,11 @@ if __name__ == "__main__":
     json.dump(
         api.request(
             "games",
-            f"fields {', '.join(download_games.fields)}",
-            f'where slug = "{sys.argv[1]}"',
+            f"fields {', '.join([*download_games.fields, "game_type", "version_parent"])}",
+            f'where slug = "{sys.argv[1]}"'
+            "& game_type = ("
+            f"{API.Game.Category.MAIN_GAME}, {API.Game.Category.EXPANDED}"
+            ")",
             "limit 1",
         ),
         sys.stdout,
