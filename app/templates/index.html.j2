@@ -3,8 +3,11 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>GOTY 2025 Games</title>
+    <title>Community GOTY {{ config.year }}</title>
     <style>
+        * {
+            box-sizing: border-box;
+        }
         html {
             background: #333;
             color: white;
@@ -13,6 +16,7 @@
             max-width: 1200px;
             margin: auto;
             font-family: sans-serif;
+            padding: 1em;
         }
 
         a, a:visited {
@@ -28,19 +32,20 @@
 
         .games {
             margin: 1em 0;
-            display: flex;
-            flex-direction: row;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, 250px);
             gap: 20px;
-            flex-wrap: wrap;
+            width: 100%;
+            justify-content: space-between;
         }
 
         .games > * {
             border: 1px solid #ccc;
             padding: 0.5em;
-            width: 300px;
             box-shadow: 0px 0px 5px rgba(0,0,0,0.5);
             border-radius: 12px;
             background: rgba(0,0,0,0.5);
+
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -71,8 +76,43 @@
             left: 0;
         }
 
+        .games .actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5em;
+        }
+
         .games .actions button {
             font-size: 1.4em;
+        }
+
+        .games .category {
+            color: gold;
+        }
+
+        .games .category .value {
+            font-weight: bold;
+        }
+
+        #search-input {
+            display: block;
+            width: 100%;
+            border-radius: 8px;
+            background: rgba(0,0,0,0.5);
+            padding: 1em;
+            font-size: 2em;
+            color: white;
+        }
+
+        @media screen and (max-width: 900px) {
+            #search-input {
+                font-size: 1.3em;
+            }
+        }
+        @media screen and (max-width: 700px) {
+            #search-input {
+                font-size: 1.1em;
+            }
         }
     </style>
     <style id="show-ratings-style">
@@ -82,12 +122,29 @@
     </style>
   </head>
   <body>
-    <h1>GOTY 2025 Games</h1>
+    <h1>Community GOTY {{ config.year }} voting</h1>
+    <p>
+        Vote for your favorite video games releases in {{ config.year }}.
+    </p>
+    <p>
+        At a later date, the results will be revealed. If you do not want to
+        reveal what games you voted for, click the "Hide vote" checkbox.
+    </p>
     <div>
         {% if discord_user %}
-            <p>Logged in as <img src="{{ discord_user.avatar_url }}" style="font-size: 2em" class="icon"> {{ discord_user.username }}</p>
-            <p><a href="{{ url_for('discord_logout') }}">Logout</a></p>
-            <p><label for="show-ratings">Show IGDB ratings: <input type="checkbox" id="show-ratings"></label></p>
+        <p>
+            Logged in as
+            <img src="{{ discord_user.avatar_url }}" style="font-size: 2em" class="icon">
+            {{ discord_user.username }}.
+            <a href="{{ url_for('discord_logout') }}">Logout</a>
+        </p>
+        <p>
+            <label for="show-ratings">
+                Show
+                <abbr title="Provided by IGDB">Internet provided ratings</abbr>:
+                <input type="checkbox" id="show-ratings">
+            </label>
+        </p>
         {% else %}
         {% if discord_auth_url %}
         <p><a href="{{ discord_auth_url }}">Login with Discord</a></p>
@@ -97,29 +154,35 @@
     {% if discord_user %}
     <div class="my-votes">
         <p>You are allowed {{ user_votes.remaining }} votes in the free category.</p>
-        {% if user_votes.votes %}
-        <p>Your voted games:</p>
-        <div class="games">
-            {% for vote in user_votes.votes %}
-            {% include "_voted_game.html.j2" %}
-            {% endfor %}
-        </div>
-        {% endif %}
         {% for genre, data in user_votes.genres.items() %}
         <p>You are allowed {{ data.remaining }} votes in the {{ genre }} category.</p>
-        {% if data.votes %}
-        <p>Your voted games in {{ genre }}:</p>
+        {% endfor %}
+        {% if user_votes.votes or (user_votes.genres.values() | selectattr('votes') | list | length > 0) %}
+        <p>Your voted games:</p>
+        {% endif %}
         <div class="games">
-            {% for vote in data.votes %}
+            {% if user_votes.votes %}
+            {% for vote in user_votes.votes %}
+            {% with vote_category='free' %}
             {% include "_voted_game.html.j2" %}
+            {% endwith %}
+            {% endfor %}
+            {% endif %}
+
+            {% for genre, data in user_votes.genres.items() %}
+            {% if data.votes %}
+            {% for vote in data.votes %}
+            {% with vote_category=genre %}
+            {% include "_voted_game.html.j2" %}
+            {% endwith %}
+            {% endfor %}
+            {% endif %}
             {% endfor %}
         </div>
-        {% endif %}
-        {% endfor %}
     </div>
     {% endif %}
     <form id="search-form">
-      <input type="text" id="search-input" placeholder="Search for a game..." autocomplete="off">
+      <input type="text" id="search-input" placeholder="Type the name of your favorite game..." autocomplete="off">
     </form>
     <div id="results" class="games"></div>
 
@@ -149,7 +212,7 @@
                         <p class="data" data-value="{first_release_date}">{first_release_date}</p>
                         <p class="data" data-value="{involved_companies}">by {involved_companies}</p>
                         <p class="data" data-value="{platforms}">On {platforms}</p>
-                        <p class="data" data-value="{genres}">Genres: {genres}</p>
+                        <p class="data" data-value="{genres}">Genres: {genres_html}</p>
                         <p class="data rating" data-value="{rating}">Rating: {rating}</p>
                     </div>
                 </div>

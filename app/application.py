@@ -29,6 +29,7 @@ app.mount("/", WSGIMiddleware(front))
 @front.context_processor
 def flask_globals():
     result = {}
+    result["config"] = config
     if config.discord.client_id and config.discord.client_secret:
         result["discord_auth_url"] = discord.get_authorization_url(
             client_id=config.discord.client_id,

@@ -34,6 +34,11 @@ class Game(BaseModel):
 
     @computed_field
     @property
+    def genres_html(self) -> str:
+        return ", ".join(self.genres)
+
+    @computed_field
+    @property
     def cover_url(self) -> str | None:
         if self.cover:
             return "https:" + self.cover.replace("t_thumb", "t_cover_big")
