@@ -155,9 +155,9 @@
     </div>
     {% if discord_user %}
     <div class="my-votes">
-        <p>You are allowed {{ user_votes.remaining }} votes in the free category.</p>
+        <p>You have {{ user_votes.remaining }} remaining votes in the free category.</p>
         {% for genre, data in user_votes.genres.items() %}
-        <p>You are allowed {{ data.remaining }} votes in the {{ genre }} category.</p>
+        <p>You have {{ data.remaining }} remaining votes in the {{ genre }} category.</p>
         {% endfor %}
         {% if user_votes.votes or (user_votes.genres.values() | selectattr('votes') | list | length > 0) %}
         <p>Your voted games:</p>
