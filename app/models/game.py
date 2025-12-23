@@ -22,6 +22,8 @@ class Game(BaseModel):
         ]
         if self.rating:
             self.rating = (self.rating * 100) // 100
+        if self.slug in ("umamusume-pretty-derby",):
+            self.genres = [x for x in self.genres if x != "Music"]
 
     @computed_field
     @property
