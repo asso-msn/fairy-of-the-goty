@@ -114,7 +114,7 @@ def api_games(q: str):
         games_by_name.keys(),
         scorer=rapidfuzz.fuzz.WRatio,
         processor=rapidfuzz.utils.default_process,
-        limit=10,
+        limit=12,
     )
     print(f"Matches for {q}: {matches}")
     return [games_by_name[result[0]].model_dump() for result in matches]
