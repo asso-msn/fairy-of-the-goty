@@ -26,6 +26,8 @@ class Config(BaseModel):
     votes_per_user: int = 3
     votes_per_genre_per_user: dict[str, int] = {"Music": 1}
     year: int = datetime.now().year
+    disable_voting: bool = False
+    allow_viewing_results: bool = False
 
     def get_games_path(self, year=None) -> str:
         year = year or self.year

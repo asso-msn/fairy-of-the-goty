@@ -72,6 +72,8 @@ def index():
 @front.route("/results/")
 @front.route("/results/<genre>")
 def results(genre=None):
+    if not config.allow_viewing_results:
+        return "Viewing results is not allowed", 403
     if genre:
         genre = genre.capitalize()
     votes_data = votes.load()
@@ -163,6 +165,8 @@ class VoteBody(BaseModel):
 def add_vote(
     body: VoteBody,
 ):
+    if config.disable_voting:
+        raise Exception("Voting is currently disabled")
     discord_api = discord.API(access_token=body.discord_access_token)
     discord_user = discord_api.get_user()
     user_id = discord_user.id
@@ -183,6 +187,8 @@ class PatchVoteBody(BaseModel):
 def patch_vote(
     body: PatchVoteBody,
 ):
+    if config.disable_voting:
+        raise Exception("Voting is currently disabled")
     discord_api = discord.API(access_token=body.discord_access_token)
     discord_user = discord_api.get_user()
     user_id = discord_user.id
@@ -198,6 +204,8 @@ def patch_vote(
 def add_vote(
     body: VoteBody,
 ):
+    if config.disable_voting:
+        raise Exception("Voting is currently disabled")
     discord_api = discord.API(access_token=body.discord_access_token)
     discord_user = discord_api.get_user()
     user_id = discord_user.id
