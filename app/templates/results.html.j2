@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Community GOTY {{ config.year }} results</title>
+    <style>
+        {% include "_style.css" %}
+    </style>
+    <style>
+        #results > *:nth-child(1) {
+            border-color: gold;
+            box-shadow: 0px 0px 5px rgba(255, 234, 0, 0.5);
+            background: rgba(116, 116, 0, 0.5);
+        }
+
+        #results > *:nth-child(2) {
+            border-color: silver;
+            box-shadow: 0px 0px 5px rgba(204, 204, 204, 0.5);
+            background: rgba(99, 99, 99, 0.5);
+        }
+
+        #results > *:nth-child(3) {
+            border-color: peru;
+            box-shadow: 0px 0px 5px rgba(255, 94, 8, 0.5);
+            background: rgba(255, 141, 47, 0.5);
+        }
+
+        #results .user {
+            border-radius: 4px;
+            border: 1px solid white;
+            padding: 0.2em 0.4em;
+            display: inline-block;
+            margin: 0.2em;
+        }
+    </style>
+  </head>
+  <body>
+    <h1>Community GOTY {{ config.year }} results for {{ category }} category</h1>
+    <p>
+        <a href="/results/">Results for Free category</a>
+        |
+        <a href="/results/music">Results for Music category</a>
+    </p>
+    <div id="stats">
+        <p>Voted games: {{ data|length }}</p>
+        <p>Participants: {{ stats.participants }}</p>
+    </div>
+    <div id="results" class="games">
+    {% for result in data %}
+    {% with game=result.game %}
+        {# <div>
+            <p>{{ result.game.name }}: {{ result.score }} votes</p>
+            <p>
+                {% for vote in result.votes %}
+                {{ vote }}
+                {% endfor %}
+            </p>
+        </div> #}
+        <div>
+            <div>
+                <div>#{{ loop.index }} with {{ result.score }} votes</div>
+                <div style="position: relative;">
+                    <a href="{{ game.igdb_url }}" target="_blank"><img src="{{ game.cover_url }}"></a>
+                    <a href="{{ game.igdb_url }}" class="name" target="_blank">{{ game.name }}</a>
+                </div>
+                <div class="meta">
+                    <p class="data" data-value="{{ game.first_release_date }}">{{ game.first_release_date }}</p>
+                    {% if game.involved_companies %}
+                    <p class="data" data-value="{{ game.involved_companies }}">by {{ game.involved_companies | join(', ') }}</p>
+                    {% endif %}
+                    {% if game.platforms %}
+                    <p class="data" data-value="{{ game.platforms }}">On {{ game.platforms | join(', ') }}</p>
+                    {% endif %}
+                    <p class="data" data-value="{{ game.genres }}">Genres: {{ game.genres_html }}</p>
+                    <p class="data rating" data-value="{{ game.rating }}">Rating: {{ game.rating }}</p>
+                </div>
+                <div class="votes">
+                    {% for vote in result.votes %}
+                    <span class="user">{{ vote }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endwith %}
+        {% endfor %}
+    </div>
+  </body>
+</html>

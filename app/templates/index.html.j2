@@ -5,117 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Community GOTY {{ config.year }}</title>
     <style>
-        * {
-            box-sizing: border-box;
-        }
-        html {
-            background: #333;
-            color: white;
-        }
-        body {
-            max-width: 1200px;
-            margin: auto;
-            font-family: sans-serif;
-            padding: 1em;
-        }
-
-        a, a:visited {
-            color: #66ccff;
-        }
-
-        .icon {
-            width: 1em;
-            height: 1em;
-            vertical-align: middle;
-            border-radius: 50%;
-        }
-
-        .games {
-            margin: 1em 0;
-            display: grid;
-            grid-template-columns: repeat(auto-fill, 250px);
-            gap: 20px;
-            width: 100%;
-            justify-content: space-between;
-        }
-
-        .games > * {
-            border: 1px solid #ccc;
-            padding: 0.5em;
-            box-shadow: 0px 0px 5px rgba(0,0,0,0.5);
-            border-radius: 12px;
-            background: rgba(0,0,0,0.5);
-
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-
-        .games img {
-            width: 100%;
-            height: auto;
-        }
-
-        .games .name {
-            font-weight: bold;
-            font-size: 1.2em;
-            text-decoration: none;
-            color: white;
-            text-shadow: 0px 0px 2px rgba(0,0,0,0.7);
-            position: absolute;
-            bottom: 10px;
-            left: 0;
-        }
-
-        .games .actions {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5em;
-        }
-
-        .games .actions button {
-            font-size: 1.4em;
-        }
-
-        .games .category {
-            color: gold;
-        }
-
-        .games .category .value {
-            font-weight: bold;
-        }
-
-        .my-votes .games img {
-            max-height: 200px;
-            width: auto;
-        }
-
-        .my-votes .games {
-            grid-template-columns: repeat(auto-fill, 180px);
-            justify-content: start;
-            gap: 10px;
-        }
-
-        #search-input {
-            display: block;
-            width: 100%;
-            border-radius: 8px;
-            background: rgba(0,0,0,0.5);
-            padding: 1em;
-            font-size: 2em;
-            color: white;
-        }
-
-        @media screen and (max-width: 900px) {
-            #search-input {
-                font-size: 1.3em;
-            }
-        }
-        @media screen and (max-width: 700px) {
-            #search-input {
-                font-size: 1.1em;
-            }
-        }
+        {% include "_style.css" %}
     </style>
     <style id="show-ratings-style">
         .rating {
@@ -236,7 +126,8 @@
                     console.log(`Replacing {${key}} with ${value}`);
                     itemHtml = itemHtml.replaceAll(`{${key}}`, value || '');
                 }
-                for (const elem of new DOMParser().parseFromString(itemHtml, 'text/html').querySelectorAll('.data')) {
+                const itemElem = new DOMParser().parseFromString(itemHtml, 'text/html');
+                for (const elem of itemElem.querySelectorAll('.data')) {
                     if (!elem.getAttribute('data-value') || elem.getAttribute('data-value') === '[]') {
                         itemHtml = itemHtml.replace(elem.outerHTML, '');
                     }

@@ -66,8 +66,42 @@ with timed("Loading games from file"):
 
 @front.route("/")
 def index():
-    print(flask_globals())
     return flask.render_template("index.html.j2")
+
+
+@front.route("/results/")
+@front.route("/results/<genre>")
+def results(genre=None):
+    if genre:
+        genre = genre.capitalize()
+    votes_data = votes.load()
+    votes_by_game = {}
+    voting_users = set()
+    with discord.DB_PATH.open() as f:
+        users_data = yaml.safe_load(f)
+    for vote in votes_data:
+        votes_by_game.setdefault(vote.game_name, [])
+        votes_by_game[vote.game_name].append(vote)
+        voting_users.add(users_data[vote.user_id])
+    top = votes.get_top(genre=genre)
+    result = [
+        {
+            "votes": [
+                users_data[vote.user_id]
+                for vote in votes_by_game[game]
+                if not vote.hidden
+            ],
+            "score": score,
+            "game": games_by_name[game],
+        }
+        for game, score in top
+    ]
+    return flask.render_template(
+        "results.html.j2",
+        data=result,
+        category=genre or "Free",
+        stats={"participants": len(voting_users)},
+    )
 
 
 @front.route("/auth/discord/callback")

@@ -172,7 +172,7 @@ if __name__ == "__main__":
     json.dump(
         api.request(
             "games",
-            f"fields {', '.join([*download_games.fields, "game_type", "version_parent"])}",
+            f"fields {', '.join([*download_games.fields, "game_type", "version_parent", "release_dates.*"])}",
             f'where slug = "{sys.argv[1]}"'
             "& game_type = ("
             f"{API.Game.Category.MAIN_GAME}, {API.Game.Category.EXPANDED}"

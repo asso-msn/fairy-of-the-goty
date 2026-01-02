@@ -26,20 +26,32 @@ def load():
         return [Vote(**item) for item in yaml.safe_load(f)]
 
 
+def get_top(genre=None, limit=None):
+    games = {}
+    for vote in load():
+        game = application.games_by_name[vote.game_name]
+        if genre == get_genre(game):
+            games[game.name] = games.get(game.name, 0) + 1
+    return sorted(games.items(), key=lambda item: item[1], reverse=True)
+
+
 def save(votes):
     with DB_PATH.open("w") as f:
         yaml.dump([vote.model_dump() for vote in votes], f)
+
+
+def get_genre(game: Game):
+    for genre in game.genres:
+        if genre in config.votes_per_genre_per_user.keys():
+            return genre
+    return None
 
 
 def add(game_name: str, user_id: str):
     votes = load()
     game = application.games_by_name[game_name]
     user_votes = get_user_votes(user_id, votes=votes)
-    vote_genre = None
-    for genre in game.genres:
-        if genre in config.votes_per_genre_per_user.keys():
-            vote_genre = genre
-            break
+    vote_genre = get_genre(game)
     if vote_genre:
         if user_votes["genres"][vote_genre]["remaining"] == 0:
             raise Exception(f"No more votes available for {vote_genre}")
