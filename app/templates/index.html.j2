@@ -110,9 +110,11 @@
                         <p class="data rating" data-value="{rating}">Rating: {rating}</p>
                     </div>
                 </div>
-                <div class="actions">
-                    <button onclick="voteGame('{escaped_name}')">Vote for this game</button>
-                </div>
+                {% if discord_user %}
+                    <div class="actions">
+                        <button onclick="voteGame('{escaped_name}')">Vote for this game</button>
+                    </div>
+                {% endif %}
             </div>`;
 
         async function searchGames(query) {

@@ -3,13 +3,13 @@ import time
 
 import flask
 import yaml
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.wsgi import WSGIMiddleware
 from fastapi.responses import JSONResponse
 from flask import Flask
 from pydantic import BaseModel
 
-from app import discord, search, votes
+from app import DATA_DIR, discord, search, votes
 from app.config import config, secret_key
 from app.models.game import Game
 
@@ -56,11 +56,49 @@ def timed(title=None):
         print(title or "Task", f"done in {time.monotonic() - now}s")
 
 
+def load_game_overrides():
+    path = DATA_DIR / "overrides.yml"
+    if not path.exists():
+        return {}
+    with path.open() as f:
+        overrides = yaml.safe_load(f)
+    if overrides is None:
+        overrides = {}
+    if not isinstance(overrides, dict):
+        raise ValueError("Game overrides must be a mapping")
+    if any(not isinstance(key, str) for key in overrides):
+        raise ValueError("Game override names must be strings")
+    unsupported = sorted(set(overrides) - {"add_genres"})
+    if unsupported:
+        raise ValueError(
+            f"Unsupported game override(s): {', '.join(unsupported)}"
+        )
+    add_genres = overrides.get("add_genres", {})
+    if not isinstance(add_genres, dict):
+        raise ValueError("add_genres must be a mapping of game slugs to genres")
+    for slug, genres in add_genres.items():
+        if not isinstance(slug, str) or not slug:
+            raise ValueError("add_genres keys must be non-empty game slugs")
+        if not isinstance(genres, list) or any(
+            not isinstance(genre, str) or not genre for genre in genres
+        ):
+            raise ValueError(
+                f"Genres for {slug} must be a list of non-empty strings"
+            )
+    return add_genres
+
+
 def load_games(year):
     with config.get_games_path(year).open() as f:
-        return {
+        games = {
             game["name"]: Game(**game) for game in yaml.safe_load(f)
         }
+    add_genres = load_game_overrides()
+    for game in games.values():
+        for genre in add_genres.get(game.slug, []):
+            if genre not in game.genres:
+                game.genres.append(genre)
+    return games
 
 
 def get_games_by_year(year):
@@ -190,7 +228,17 @@ def api_games(q: str):
 
 class VoteBody(BaseModel):
     game_name: str
-    discord_access_token: str
+    discord_access_token: str | None = None
+
+
+def get_discord_user(access_token: str | None):
+    if not access_token:
+        raise HTTPException(
+            status_code=401,
+            detail="Discord authentication required",
+        )
+    discord_api = discord.API(access_token=access_token)
+    return discord_api.get_user()
 
 
 @api.post("/vote/")
@@ -199,8 +247,7 @@ def add_vote(
 ):
     if config.disable_voting:
         raise Exception("Voting is currently disabled")
-    discord_api = discord.API(access_token=body.discord_access_token)
-    discord_user = discord_api.get_user()
+    discord_user = get_discord_user(body.discord_access_token)
     user_id = discord_user.id
 
     votes.add(
@@ -211,7 +258,7 @@ def add_vote(
 
 class PatchVoteBody(BaseModel):
     game_name: str
-    discord_access_token: str
+    discord_access_token: str | None = None
     hidden: bool
 
 
@@ -221,8 +268,7 @@ def patch_vote(
 ):
     if config.disable_voting:
         raise Exception("Voting is currently disabled")
-    discord_api = discord.API(access_token=body.discord_access_token)
-    discord_user = discord_api.get_user()
+    discord_user = get_discord_user(body.discord_access_token)
     user_id = discord_user.id
 
     votes.set_hidden(
@@ -238,8 +284,7 @@ def add_vote(
 ):
     if config.disable_voting:
         raise Exception("Voting is currently disabled")
-    discord_api = discord.API(access_token=body.discord_access_token)
-    discord_user = discord_api.get_user()
+    discord_user = get_discord_user(body.discord_access_token)
     user_id = discord_user.id
 
     votes.delete(
