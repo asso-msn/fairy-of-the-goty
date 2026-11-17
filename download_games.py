@@ -18,14 +18,19 @@ fields = (
     "genres.name",
     "platforms.name",
     "first_release_date",
+    "release_dates.date",
+    "release_dates.y",
+    "release_dates.platform.name",
     "cover.url",
     "involved_companies.company.name",
 )
 
 
 def from_igdb_data(data: dict) -> Game:
-    result = {}
+    result = {"release_dates": data.get("release_dates", [])}
     for field in fields:
+        if field.startswith("release_dates."):
+            continue
         parts = field.split(".")
         value = data
         for part in parts:

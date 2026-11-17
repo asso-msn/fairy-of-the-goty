@@ -2,7 +2,6 @@ import contextlib
 import time
 
 import flask
-import rapidfuzz
 import yaml
 from fastapi import FastAPI, Request
 from fastapi.middleware.wsgi import WSGIMiddleware
@@ -10,7 +9,7 @@ from fastapi.responses import JSONResponse
 from flask import Flask
 from pydantic import BaseModel
 
-from app import discord, votes
+from app import discord, search, votes
 from app.config import config, secret_key
 from app.models.game import Game
 
@@ -57,11 +56,23 @@ def timed(title=None):
         print(title or "Task", f"done in {time.monotonic() - now}s")
 
 
-with timed("Loading games from file"):
-    with config.get_games_path().open() as f:
-        games_by_name = {
+def load_games(year):
+    with config.get_games_path(year).open() as f:
+        return {
             game["name"]: Game(**game) for game in yaml.safe_load(f)
         }
+
+
+def get_games_by_year(year):
+    if year not in games_by_year:
+        games_by_year[year] = load_games(year)
+    return games_by_year[year]
+
+
+with timed("Loading games from file"):
+    votes.archive_legacy_votes(config.year)
+    games_by_year = {config.year: load_games(config.year)}
+    games_by_name = games_by_year[config.year]
 
 
 @front.route("/")
@@ -72,11 +83,24 @@ def index():
 @front.route("/results/")
 @front.route("/results/<genre>")
 def results(genre=None):
-    if not config.allow_viewing_results:
+    return render_results(config.year, genre)
+
+
+@front.route("/<int:year>/results/")
+@front.route("/<int:year>/results/<genre>")
+def historical_results(year, genre=None):
+    if year >= config.year or not config.get_games_path(year).is_file():
+        flask.abort(404)
+    return render_results(year, genre, public=True)
+
+
+def render_results(year, genre, public=False):
+    if not public and not config.allow_viewing_results:
         return "Viewing results is not allowed", 403
     if genre:
         genre = genre.capitalize()
-    votes_data = votes.load()
+    games_for_year = get_games_by_year(year)
+    votes_data = votes.load(year=year) if public else votes.load()
     votes_by_game = {}
     voting_users = set()
     with discord.DB_PATH.open() as f:
@@ -85,7 +109,11 @@ def results(genre=None):
         votes_by_game.setdefault(vote.game_name, [])
         votes_by_game[vote.game_name].append(vote)
         voting_users.add(users_data[vote.user_id])
-    top = votes.get_top(genre=genre)
+    top = votes.get_top(
+        genre=genre,
+        votes_data=votes_data,
+        games_by_name=games_for_year,
+    )
     result = [
         {
             "votes": [
@@ -94,7 +122,7 @@ def results(genre=None):
                 if not vote.hidden
             ],
             "score": score,
-            "game": games_by_name[game],
+            "game": games_for_year[game],
         }
         for game, score in top
     ]
@@ -102,6 +130,8 @@ def results(genre=None):
         "results.html.j2",
         data=result,
         category=genre or "Free",
+        year=year,
+        results_path=f"/{year}/results" if public else "/results",
         stats={"participants": len(voting_users)},
     )
 
@@ -145,15 +175,17 @@ async def api_exception_handler(request: Request, exc: Exception):
 def api_games(q: str):
     if not q:
         return []
-    matches = rapidfuzz.process.extract(
-        q,
-        games_by_name.keys(),
-        scorer=rapidfuzz.fuzz.WRatio,
-        processor=rapidfuzz.utils.default_process,
-        limit=12,
-    )
+    matches = search.find_matches(q, games_by_name.keys())
     print(f"Matches for {q}: {matches}")
-    return [games_by_name[result[0]].model_dump() for result in matches]
+    return [
+        {
+            **games_by_name[result[0]].model_dump(),
+            "year_releases": games_by_name[result[0]].get_release_labels(
+                config.year
+            ),
+        }
+        for result in matches
+    ]
 
 
 class VoteBody(BaseModel):

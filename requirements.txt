@@ -6,3 +6,4 @@ pyyaml
 rapidfuzz
 requests
 requests-cache
+Unidecode

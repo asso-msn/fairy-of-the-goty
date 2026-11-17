@@ -3,6 +3,18 @@ import html
 
 from pydantic import BaseModel, Field, computed_field
 
+PLATFORM_NAMES = {"PC (Microsoft Windows)": "Windows"}
+
+
+class ReleasePlatform(BaseModel):
+    name: str
+
+
+class ReleaseDate(BaseModel):
+    date: datetime.date | None = None
+    y: int | None = None
+    platform: ReleasePlatform | None = None
+
 
 class Game(BaseModel):
     name: str
@@ -11,13 +23,14 @@ class Game(BaseModel):
     rating: float = None
     genres: list[str] = Field(default_factory=list)
     platforms: list[str] = Field(default_factory=list)
-    first_release_date: datetime.date = None
+    first_release_date: datetime.date | None = None
+    release_dates: list[ReleaseDate] = Field(default_factory=list)
     cover: str = None
     involved_companies: list[str] = None
 
     def model_post_init(self, context):
         self.platforms = [
-            {"PC (Microsoft Windows)": "Windows"}.get(p, p)
+            PLATFORM_NAMES.get(p, p)
             for p in self.platforms
         ]
         if self.rating:
@@ -27,6 +40,21 @@ class Game(BaseModel):
             "deltarune",
         ):
             self.genres = [x for x in self.genres if x != "Music"]
+
+    def get_release_labels(self, year: int) -> list[str]:
+        if not self.first_release_date or self.first_release_date.year >= year:
+            return []
+        labels = []
+        for release in self.release_dates:
+            release_year = release.date.year if release.date else release.y
+            if release_year == year and release.platform:
+                platform = PLATFORM_NAMES.get(
+                    release.platform.name, release.platform.name
+                )
+                label = f"{platform} ({year})"
+                if label not in labels:
+                    labels.append(label)
+        return labels
 
     @computed_field
     @property

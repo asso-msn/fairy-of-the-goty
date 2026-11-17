@@ -5,7 +5,16 @@
     <span class="category">Nominated for: <span class="value">{{ vote_category }}</span> category</span>
     {% endif %}
     <div class="meta">
-        <p>{{ vote.game.genres | join(', ') }}</p>
+        <p>
+            {% for genre in vote.game.genres %}
+                {% if genre in config.votes_per_genre_per_user %}
+                <span class="voting-genre">{{ genre }}</span>
+                {% else %}
+                {{ genre }}
+                {% endif %}
+                {% if not loop.last %}, {% endif %}
+            {% endfor %}
+        </p>
         <p class="rating">Rating: {{ vote.game.rating }}</p>
     </div>
     <div class="actions">

@@ -10,6 +10,20 @@ from app.models.game import Game
 DB_PATH = VAR_DIR / "votes.yml"
 
 
+def get_db_path(year=None):
+    if year is None:
+        return DB_PATH
+    return VAR_DIR / f"{year}_votes.yaml"
+
+
+def archive_legacy_votes(year):
+    if year <= 2025:
+        return
+    archive_path = get_db_path(year - 1)
+    if not archive_path.exists() and DB_PATH.exists():
+        DB_PATH.rename(archive_path)
+
+
 class Vote(BaseModel):
     game_name: str
     user_id: str = Field(coerce_numbers_to_str=True)
@@ -19,17 +33,22 @@ class Vote(BaseModel):
     )
 
 
-def load():
-    if not DB_PATH.exists():
+def load(year=None):
+    db_path = get_db_path(year)
+    if not db_path.exists():
         return []
-    with DB_PATH.open() as f:
+    with db_path.open() as f:
         return [Vote(**item) for item in yaml.safe_load(f)]
 
 
-def get_top(genre=None, limit=None):
+def get_top(genre=None, limit=None, votes_data=None, games_by_name=None):
     games = {}
-    for vote in load():
-        game = application.games_by_name[vote.game_name]
+    if votes_data is None:
+        votes_data = load()
+    if games_by_name is None:
+        games_by_name = application.games_by_name
+    for vote in votes_data:
+        game = games_by_name[vote.game_name]
         if genre == get_genre(game):
             games[game.name] = games.get(game.name, 0) + 1
     return sorted(games.items(), key=lambda item: item[1], reverse=True)
@@ -85,15 +104,18 @@ def set_hidden(game_name: str, user_id: str, hidden: bool):
     save(votes)
 
 
-def get_user_votes(user_id: str, votes=None):
+def get_user_votes(user_id: str, votes=None, games_by_name=None):
     def build_vote(vote: Vote):
         return {
-            "game": application.games_by_name[vote.game_name],
+            "game": games_by_name[vote.game_name],
             "time": vote.time,
             "hidden": vote.hidden,
         }
 
-    votes = votes or load()
+    if games_by_name is None:
+        games_by_name = application.games_by_name
+    if votes is None:
+        votes = load()
     user_votes = [build_vote(vote) for vote in votes if vote.user_id == user_id]
     user_votes_all = [
         vote

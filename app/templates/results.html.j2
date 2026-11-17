@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Community GOTY {{ config.year }} results</title>
+    <title>Community GOTY {{ year }} results</title>
     <style>
         {% include "_style.css" %}
     </style>
@@ -36,11 +36,11 @@
     </style>
   </head>
   <body>
-    <h1>Community GOTY {{ config.year }} results for {{ category }} category</h1>
+    <h1>Community GOTY {{ year }} results for {{ category }} category</h1>
     <p>
-        <a href="/results/">Results for Free category</a>
+        <a href="{{ results_path }}/">Results for Free category</a>
         |
-        <a href="/results/music">Results for Music category</a>
+        <a href="{{ results_path }}/music">Results for Music category</a>
     </p>
     <div id="stats">
         <p>Voted games: {{ data|length }}</p>
@@ -66,13 +66,25 @@
                 </div>
                 <div class="meta">
                     <p class="data" data-value="{{ game.first_release_date }}">{{ game.first_release_date }}</p>
+                    {% for release in game.get_release_labels(year) %}
+                    <p>{{ release | e }}</p>
+                    {% endfor %}
                     {% if game.involved_companies %}
                     <p class="data" data-value="{{ game.involved_companies }}">by {{ game.involved_companies | join(', ') }}</p>
                     {% endif %}
                     {% if game.platforms %}
                     <p class="data" data-value="{{ game.platforms }}">On {{ game.platforms | join(', ') }}</p>
                     {% endif %}
-                    <p class="data" data-value="{{ game.genres }}">Genres: {{ game.genres_html }}</p>
+                    <p class="data" data-value="{{ game.genres }}">Genres:
+                    {% for genre in game.genres %}
+                        {% if genre in config.votes_per_genre_per_user %}
+                        <span class="voting-genre">{{ genre }}</span>
+                        {% else %}
+                        {{ genre }}
+                        {% endif %}
+                        {% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                    </p>
                     <p class="data rating" data-value="{{ game.rating }}">Rating: {{ game.rating }}</p>
                 </div>
                 <div class="votes">
