@@ -10,6 +10,13 @@ from app.config import config
 from app.igdb import API
 from app.models.game import Game
 
+ELIGIBLE_GAME_TYPES = (
+    API.Game.Category.MAIN_GAME,
+    API.Game.Category.EXPANDED,
+    API.Game.Category.REMAKE,
+    API.Game.Category.REMASTER,
+)
+
 fields = (
     "name",
     # "summary",
@@ -49,6 +56,20 @@ def from_igdb_data(data: dict) -> Game:
     return Game(**result)
 
 
+def build_games_where(year: int) -> str:
+    start_of_year_unix = int(datetime(year, 1, 1).timestamp())
+    end_of_year_unix = int(
+        datetime(year, 12, 31, 23, 59, 59).timestamp()
+    )
+    game_types = ", ".join(str(game_type) for game_type in ELIGIBLE_GAME_TYPES)
+    return (
+        f"game_type = ({game_types})"
+        f"& release_dates.date >= {start_of_year_unix}"
+        f"& release_dates.date <= {end_of_year_unix}"
+        "& version_parent = null"
+    )
+
+
 if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument("year", type=int, nargs="?", default=config.year)
@@ -65,9 +86,6 @@ if __name__ == "__main__":
         ),
     )
 
-    start_of_year_unix = int(datetime(args.year, 1, 1).timestamp())
-    end_of_year_unix = int(datetime(args.year, 12, 31, 23, 59, 59).timestamp())
-
     stop_at = args.stop_at
     results = []
     limit = 500
@@ -79,16 +97,7 @@ if __name__ == "__main__":
         result = api.request(
             "games",
             f"fields {', '.join(fields)}",
-            "where "
-            + (
-                "game_type = ("
-                f"{API.Game.Category.MAIN_GAME}, {API.Game.Category.EXPANDED}"
-                ")"
-                f"& release_dates.date >= {start_of_year_unix}"
-                f"& release_dates.date <= {end_of_year_unix}"
-                # "& parent_game = null"
-                "& version_parent = null"
-            ),
+            f"where {build_games_where(args.year)}",
             f"limit {limit}",
             f"offset {limit * page}",
         )
