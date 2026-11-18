@@ -1,6 +1,9 @@
 <div>
     <a href="{{ vote.game.igdb_url }}" target="_blank"><img src="{{ vote.game.cover_url }}"></a>
     <a href="{{ vote.game.igdb_url }}" target="_blank">{{ vote.game.name }}</a>
+    {% if vote.game.release_type != 'normal' %}
+    <span class="release-type">{{ vote.game.release_type }}</span>
+    {% endif %}
     {% if vote_category %}
     <span class="category">Nominated for: <span class="value">{{ vote_category }}</span> category</span>
     {% endif %}

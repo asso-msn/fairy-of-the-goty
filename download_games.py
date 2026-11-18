@@ -21,6 +21,7 @@ fields = (
     "name",
     # "summary",
     "slug",
+    "game_type",
     "rating",
     "genres.name",
     "platforms.name",

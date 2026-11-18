@@ -3,6 +3,8 @@ import html
 
 from pydantic import BaseModel, Field, computed_field
 
+from app.igdb import API
+
 PLATFORM_NAMES = {"PC (Microsoft Windows)": "Windows"}
 
 
@@ -20,6 +22,7 @@ class Game(BaseModel):
     name: str
     summary: str = None
     slug: str
+    game_type: int | None = None
     rating: float = None
     genres: list[str] = Field(default_factory=list)
     platforms: list[str] = Field(default_factory=list)
@@ -55,6 +58,13 @@ class Game(BaseModel):
                 if label not in labels:
                     labels.append(label)
         return labels
+
+    @computed_field
+    @property
+    def release_type(self) -> str:
+        if self.game_type is None:
+            return "normal"
+        return API.Game.Category(self.game_type).display_name
 
     @computed_field
     @property

@@ -4,7 +4,7 @@ import time
 import flask
 import yaml
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.middleware.wsgi import WSGIMiddleware
+from a2wsgi import WSGIMiddleware
 from fastapi.responses import JSONResponse
 from flask import Flask
 from pydantic import BaseModel

@@ -99,6 +99,14 @@ class API:
             def __str__(self):
                 return str(self.value)
 
+            @property
+            def display_name(self):
+                if self == self.MAIN_GAME:
+                    return "normal"
+                if self == self.EXPANDED:
+                    return "Expanded Game"
+                return self.name.replace("_", " ").title()
+
         name: str
         slug: str
         platforms: list["API.Platform"] = dataclasses.field(

@@ -78,6 +78,11 @@ a, a:visited {
     font-weight: bold;
 }
 
+.games .release-type {
+    color: #66ccff;
+    font-weight: bold;
+}
+
 .games .voting-genre {
     color: gold;
     font-weight: bold;

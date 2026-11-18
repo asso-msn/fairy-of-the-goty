@@ -109,6 +109,7 @@
                         <a href="{igdb_url}" class="name" target="_blank">{name}</a>
                     </div>
                     <div class="meta">
+                        <p class="data release-type" data-value="{release_type}">{release_type}</p>
                         <p class="data" data-value="{first_release_date}">{first_release_date}</p>
                         <div class="year-releases"></div>
                         <p class="data" data-value="{involved_companies}">by {involved_companies}</p>
@@ -139,7 +140,12 @@
                 }
                 const itemElem = new DOMParser().parseFromString(itemHtml, 'text/html');
                 for (const elem of itemElem.querySelectorAll('.data')) {
-                    if (!elem.getAttribute('data-value') || elem.getAttribute('data-value') === '[]') {
+                    if (!elem.getAttribute('data-value')
+                        || elem.getAttribute('data-value') === '[]'
+                        || (
+                            elem.classList.contains('release-type')
+                            && elem.getAttribute('data-value') === 'normal'
+                        )) {
                         elem.remove();
                     }
                 }
