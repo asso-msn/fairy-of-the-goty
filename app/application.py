@@ -68,7 +68,7 @@ def load_game_overrides():
         raise ValueError("Game overrides must be a mapping")
     if any(not isinstance(key, str) for key in overrides):
         raise ValueError("Game override names must be strings")
-    unsupported = sorted(set(overrides) - {"add_genres"})
+    unsupported = sorted(set(overrides) - {"add_genres", "force_year"})
     if unsupported:
         raise ValueError(
             f"Unsupported game override(s): {', '.join(unsupported)}"
@@ -85,7 +85,15 @@ def load_game_overrides():
             raise ValueError(
                 f"Genres for {slug} must be a list of non-empty strings"
             )
-    return add_genres
+    force_year = overrides.get("force_year", {})
+    if not isinstance(force_year, dict):
+        raise ValueError("force_year must be a mapping of game slugs to years")
+    for slug, year in force_year.items():
+        if not isinstance(slug, str) or not slug:
+            raise ValueError("force_year keys must be non-empty game slugs")
+        if not isinstance(year, int) or isinstance(year, bool):
+            raise ValueError(f"Year for {slug} must be an integer")
+    return {"add_genres": add_genres, "force_year": force_year}
 
 
 def load_games(year):
@@ -93,7 +101,14 @@ def load_games(year):
         games = {
             game["name"]: Game(**game) for game in yaml.safe_load(f)
         }
-    add_genres = load_game_overrides()
+    overrides = load_game_overrides()
+    force_year = overrides["force_year"]
+    games = {
+        name: game
+        for name, game in games.items()
+        if game.slug not in force_year or force_year[game.slug] == year
+    }
+    add_genres = overrides["add_genres"]
     for game in games.values():
         for genre in add_genres.get(game.slug, []):
             if genre not in game.genres:
